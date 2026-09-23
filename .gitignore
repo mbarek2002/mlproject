@@ -1,1 +1,28 @@
-\venv
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Packaging / build artifacts
+*.egg-info/
+build/
+dist/
+*.egg
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs / env files
+logs/
+*.log
+.env
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
