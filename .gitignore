@@ -3,6 +3,8 @@ venv/
 .venv/
 env/
 
+.artifacts
+
 # Packaging / build artifacts
 *.egg-info/
 build/
