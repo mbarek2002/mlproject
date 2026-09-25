@@ -94,19 +94,14 @@ class ModelTrainer:
             model_report:dict=evaluate_models(X_train=X_train,y_train=y_train,X_test=X_test,y_test=y_test,
                                              models=models,param=params)
             
-            ## To get best model score from dict
-            best_model_score = max(sorted(model_report.values()))
-
-            ## To get best model name from dict
-
-            best_model_name = list(model_report.keys())[
-                list(model_report.values()).index(best_model_score)
-            ]
+            ## model_report = {model name: cross-validation r2}, the best one is chosen without looking at the test set
+            best_model_name = max(model_report, key=model_report.get)
+            best_model_score = model_report[best_model_name]
             best_model = models[best_model_name]
 
             if best_model_score<0.6:
                 raise CustomException("No best model found",sys)
-            logging.info(f"Best found model on both training and testing dataset")
+            logging.info(f"Best model on cross-validation: {best_model_name} (cv_r2={best_model_score})")
 
             save_object(
                 file_path=self.model_trainer_config.trained_model_file_path,
@@ -118,6 +113,7 @@ class ModelTrainer:
             r2_square = r2_score(y_test, predicted)
 
             mlflow.log_param("best_model", best_model_name)
+            mlflow.log_metric("best_cv_r2", best_model_score)
             mlflow.log_metric("best_r2_test", r2_square)
 
             self.register_model(best_model, best_model_name, r2_square, preprocessor_path, test_path)

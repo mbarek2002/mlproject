@@ -3,7 +3,6 @@ import sys
 
 import numpy as np 
 import pandas as pd
-import dill
 import pickle
 import mlflow
 from sklearn.metrics import r2_score
@@ -58,7 +57,8 @@ def evaluate_models(X_train, y_train,X_test,y_test,models,param):
                     "r2_test": test_model_score,
                 })
 
-            report[model_name] = test_model_score
+            # model selection uses the cross-validation score only: the test set is kept for the final evaluation
+            report[model_name] = gs.best_score_
 
         return report
 

@@ -18,6 +18,9 @@ __pycache__/
 # Jupyter
 .ipynb_checkpoints/
 
+# CatBoost training logs (regenerated at every training)
+catboost_info/
+
 # MLflow (tracking db + run artifacts)
 mlflow.db
 mlruns/

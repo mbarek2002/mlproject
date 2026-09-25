@@ -7,33 +7,40 @@ from src.mlflow_config import MLFLOW_TRACKING_URI, REGISTERED_MODEL_NAME, CHAMPI
 import os
 import mlflow
 import mlflow.sklearn
+from sklearn.pipeline import Pipeline
 
 class PredictPipeline:
+    # shared by all instances: the model is loaded once per process, not on every request
+    _model=None
+
     def __init__(self):
         pass
 
+    @classmethod
+    def load_model(cls):
+        '''
+        Returns a model that takes the raw features DataFrame (preprocessor + model).
+        1st choice: champion from the MLflow Model Registry, fallback: artifacts/*.pkl
+        '''
+        if cls._model is not None:
+            return cls._model
+
+        try:
+            mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+            model_uri=f"models:/{REGISTERED_MODEL_NAME}@{CHAMPION_ALIAS}"
+            cls._model=mlflow.sklearn.load_model(model_uri)
+            logging.info(f"Loaded model from {model_uri}")
+        except Exception as e:
+            logging.info(f"Could not load model from MLflow registry ({e}), falling back to artifacts/*.pkl")
+            model=load_object(file_path=os.path.join("artifacts","model.pkl"))
+            preprocessor=load_object(file_path=os.path.join("artifacts","preprocessor.pkl"))
+            cls._model=Pipeline(steps=[("preprocessor",preprocessor),("model",model)])
+
+        return cls._model
+
     def predict(self,features):
         try:
-            # 1st choice: champion model from the MLflow Model Registry (preprocessor + model in one Pipeline)
-            try:
-                mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-                model_uri=f"models:/{REGISTERED_MODEL_NAME}@{CHAMPION_ALIAS}"
-                print(f"Loading {model_uri}")
-                full_model=mlflow.sklearn.load_model(model_uri)
-                return full_model.predict(features)
-            except Exception as e:
-                logging.info(f"Could not load model from MLflow registry ({e}), falling back to artifacts/*.pkl")
-
-            # fallback: local pickles
-            model_path=os.path.join("artifacts","model.pkl")
-            preprocessor_path=os.path.join('artifacts','preprocessor.pkl')
-            print("Before Loading")
-            model=load_object(file_path=model_path)
-            preprocessor=load_object(file_path=preprocessor_path)
-            print("After Loading")
-            data_scaled=preprocessor.transform(features)
-            preds=model.predict(data_scaled)
-            return preds
+            return self.load_model().predict(features)
 
         except Exception as e:
             raise CustomException(e,sys)
