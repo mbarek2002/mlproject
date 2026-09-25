@@ -1,8 +1,12 @@
 import sys
 import pandas as pd
 from src.exception import CustomException
+from src.logger import logging
 from src.utils import load_object
+from src.mlflow_config import MLFLOW_TRACKING_URI, REGISTERED_MODEL_NAME, CHAMPION_ALIAS
 import os
+import mlflow
+import mlflow.sklearn
 
 class PredictPipeline:
     def __init__(self):
@@ -10,6 +14,17 @@ class PredictPipeline:
 
     def predict(self,features):
         try:
+            # 1st choice: champion model from the MLflow Model Registry (preprocessor + model in one Pipeline)
+            try:
+                mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+                model_uri=f"models:/{REGISTERED_MODEL_NAME}@{CHAMPION_ALIAS}"
+                print(f"Loading {model_uri}")
+                full_model=mlflow.sklearn.load_model(model_uri)
+                return full_model.predict(features)
+            except Exception as e:
+                logging.info(f"Could not load model from MLflow registry ({e}), falling back to artifacts/*.pkl")
+
+            # fallback: local pickles
             model_path=os.path.join("artifacts","model.pkl")
             preprocessor_path=os.path.join('artifacts','preprocessor.pkl')
             print("Before Loading")
@@ -19,7 +34,7 @@ class PredictPipeline:
             data_scaled=preprocessor.transform(features)
             preds=model.predict(data_scaled)
             return preds
-        
+
         except Exception as e:
             raise CustomException(e,sys)
 

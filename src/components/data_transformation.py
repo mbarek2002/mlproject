@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np 
 import pandas as pd
+import mlflow
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
@@ -114,6 +115,19 @@ class DataTransformation:
                 obj=preprocessing_obj
 
             )
+
+            if mlflow.active_run():
+                mlflow.log_params({
+                    "target_column": target_column_name,
+                    "numerical_columns": numerical_columns,
+                    "categorical_columns": [
+                        col for col in input_feature_train_df.columns if col not in numerical_columns
+                    ],
+                })
+                mlflow.log_artifact(
+                    self.data_transformation_config.preprocessor_obj_file_path,
+                    artifact_path="preprocessor"
+                )
 
             return (
                 train_arr,
