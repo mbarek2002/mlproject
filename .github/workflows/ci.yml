@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests (Python 3.8)
+    runs-on: ubuntu-latest
+    # same base image as the Dockerfile: tests run with the exact production Python and dependencies
+    container: python:3.8-slim
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PIP_ROOT_USER_ACTION: ignore
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache pip downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements-prod.txt') }}
+
+      - name: Install dependencies
+        run: pip install -r requirements-prod.txt pytest==8.3.5
+
+      - name: Run tests
+        run: python -m pytest -v
+
+  docker:
+    name: Docker build + smoke test
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # the build itself fails if artifacts/model.pkl cannot be loaded (check in the Dockerfile)
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: student-performance:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start container
+        run: docker run -d --name student-app -p 5000:5000 student-performance:ci
+
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fs http://127.0.0.1:5000/health; then echo; exit 0; fi
+            sleep 1
+          done
+          echo "App did not become healthy"
+          exit 1
+
+      - name: Smoke test prediction
+        run: |
+          status=$(curl -s -o page.html -w "%{http_code}" -X POST http://127.0.0.1:5000/predictdata \
+            --data-urlencode "gender=female" \
+            --data-urlencode "ethnicity=group B" \
+            --data-urlencode "parental_level_of_education=bachelor's degree" \
+            --data-urlencode "lunch=standard" \
+            --data-urlencode "test_preparation_course=none" \
+            --data-urlencode "reading_score=72" \
+            --data-urlencode "writing_score=74")
+          echo "HTTP $status"
+          test "$status" = "200"
+          grep -o "Predicted maths score: <strong>[^<]*" page.html
+
+      - name: Container logs
+        if: always()
+        run: docker logs student-app || true
