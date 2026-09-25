@@ -73,6 +73,10 @@
         <button class="btn btn-primary" type="submit">Predict your Maths Score</button>
     </form>
 
+    {% if error is defined %}
+    <div class="alert alert-danger mt-4">{{ error }}</div>
+    {% endif %}
+
     {% if results is defined %}
     <div class="alert alert-success mt-4 fs-4">
         Predicted maths score: <strong>{{ results }}</strong>

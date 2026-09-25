@@ -12,11 +12,36 @@ app=application
 def index():
     return render_template('index.html')
 
+REQUIRED_FIELDS=['gender','ethnicity','parental_level_of_education','lunch','test_preparation_course',
+                 'reading_score','writing_score']
+
+def validate_form(form):
+    '''
+    Returns an error message, or None if the form is valid
+    '''
+    missing=[field for field in REQUIRED_FIELDS if not form.get(field)]
+    if missing:
+        return f"Missing fields: {', '.join(missing)}"
+
+    for field in ['reading_score','writing_score']:
+        try:
+            score=float(form.get(field))
+        except ValueError:
+            return f"{field} must be a number"
+        if not 0<=score<=100:
+            return f"{field} must be between 0 and 100"
+
+    return None
+
 @app.route('/predictdata',methods=['GET','POST'])
 def predict_datapoint():
     if request.method=='GET':
         return render_template('home.html')
     else:
+        error=validate_form(request.form)
+        if error:
+            return render_template('home.html',error=error),400
+
         data=CustomData(
             gender=request.form.get('gender'),
             race_ethnicity=request.form.get('ethnicity'),

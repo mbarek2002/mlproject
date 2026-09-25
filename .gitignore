@@ -15,6 +15,9 @@ dist/
 __pycache__/
 *.py[cod]
 
+# Pytest
+.pytest_cache/
+
 # Jupyter
 .ipynb_checkpoints/
 
