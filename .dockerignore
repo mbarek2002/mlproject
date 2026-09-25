@@ -1,0 +1,24 @@
+# only what the Dockerfile COPYs is needed, keep the build context small
+venv/
+.venv/
+.git/
+.gitignore
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.vscode/
+.idea/
+
+logs/
+notebooks/
+catboost_info/
+tests/
+*.egg-info/
+
+# local MLflow registry: stores absolute Windows paths, unusable inside the container
+mlflow.db
+mlruns/
+mlartifacts/
+
+Dockerfile
+.dockerignore

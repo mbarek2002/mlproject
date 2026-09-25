@@ -12,6 +12,12 @@ app=application
 def index():
     return render_template('index.html')
 
+## Health check for Docker / cloud platforms
+
+@app.route('/health')
+def health():
+    return {"status":"ok"}
+
 REQUIRED_FIELDS=['gender','ethnicity','parental_level_of_education','lunch','test_preparation_course',
                  'reading_score','writing_score']
 

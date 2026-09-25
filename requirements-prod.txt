@@ -1,0 +1,9 @@
+# Dependencies to SERVE the model (Docker image). Training dependencies are in requirements.txt.
+# If the champion model becomes XGBoost or CatBoost, add xgboost / catboost here:
+# the Docker build checks that the model loads and fails otherwise.
+pandas==2.0.3
+numpy==1.24.4
+scikit-learn==1.3.2
+Flask==3.0.3
+mlflow-skinny==2.17.2
+waitress==3.0.0
