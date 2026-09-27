@@ -11,6 +11,14 @@ __pycache__/
 
 logs/
 notebooks/
+
+# DVC: cache and pipeline files are not needed to serve the model
+.dvc/
+.dvcignore
+dvc.yaml
+dvc.lock
+params.yaml
+metrics.json
 catboost_info/
 tests/
 *.egg-info/

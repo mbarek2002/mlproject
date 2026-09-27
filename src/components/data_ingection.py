@@ -3,7 +3,6 @@ import sys
 from src.exception import CustomException
 from src.logger import logging
 import pandas as pd
-import mlflow
 
 from sklearn.model_selection import train_test_split
 from dataclasses import dataclass
@@ -41,16 +40,6 @@ class DataIngestion:
             train_set.to_csv(self.ingestion_config.train_data_path,index=False,header=True)
 
             test_set.to_csv(self.ingestion_config.test_data_path,index=False,header=True)
-
-            if mlflow.active_run():
-                mlflow.log_params({
-                    "data_source": self.ingestion_config.source_data_path,
-                    "n_rows": len(df),
-                    "n_train": len(train_set),
-                    "n_test": len(test_set),
-                    "test_size": self.ingestion_config.test_size,
-                    "random_state": self.ingestion_config.random_state,
-                })
 
             logging.info("Inmgestion of the data iss completed")
 

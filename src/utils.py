@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import mlflow
+import yaml
 from sklearn.metrics import r2_score
 from sklearn.model_selection import GridSearchCV
 
@@ -22,7 +23,18 @@ def save_object(file_path, obj):
     except Exception as e:
         raise CustomException(e, sys)
     
-def evaluate_models(X_train, y_train,X_test,y_test,models,param):
+def read_params(file_path="params.yaml"):
+    '''
+    Returns the pipeline parameters (params.yaml, tracked by DVC)
+    '''
+    try:
+        with open(file_path) as file_obj:
+            return yaml.safe_load(file_obj)
+
+    except Exception as e:
+        raise CustomException(e, sys)
+
+def evaluate_models(X_train, y_train,X_test,y_test,models,param,cv=3):
     try:
         report = {}
 
@@ -33,7 +45,7 @@ def evaluate_models(X_train, y_train,X_test,y_test,models,param):
 
             # one nested run per model, under the train_pipeline parent run
             with mlflow.start_run(run_name=model_name, nested=True):
-                gs = GridSearchCV(model,para,cv=3)
+                gs = GridSearchCV(model,para,cv=cv)
                 gs.fit(X_train,y_train)
 
                 model.set_params(**gs.best_params_)

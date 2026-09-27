@@ -11,6 +11,7 @@ Predicts a student's **math score** from their profile and their reading & writi
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3.2-F7931E?logo=scikitlearn&logoColor=white)
 ![MLflow](https://img.shields.io/badge/MLflow-2.17-0194E2?logo=mlflow&logoColor=white)
 ![Databricks](https://img.shields.io/badge/Registry-Databricks%20Unity%20Catalog-FF3621?logo=databricks&logoColor=white)
+![DVC](https://img.shields.io/badge/Data%20%26%20pipeline-DVC%20%2B%20DagsHub-945DD6?logo=dvc&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.0-000000?logo=flask&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![Render](https://img.shields.io/badge/Deployed%20on-Render-46E3B7?logo=render&logoColor=white)
@@ -33,6 +34,7 @@ Predicts a student's **math score** from their profile and their reading & writi
 - [Project structure](#-project-structure)
 - [Getting started](#-getting-started)
 - [Configuration: local or Databricks registry](#-configuration-local-or-databricks-registry)
+- [Data & pipeline versioning (DVC)](#-data--pipeline-versioning-dvc)
 - [Usage](#-usage)
 - [Tests & CI/CD](#-tests--cicd)
 - [Technical choices](#-technical-choices)
@@ -52,7 +54,7 @@ Predicts a student's **math score** from their profile and their reading & writi
 The project covers the full ML lifecycle:
 
 1. **EDA**: [`notebooks/1 . EDA STUDENT PERFORMANCE .ipynb`](notebooks/)
-2. **Modular training pipeline**: ingestion → transformation → training of 7 models with hyperparameter search
+2. **Modular training pipeline**: ingestion → transformation → training of 7 models with hyperparameter search, orchestrated and versioned with **DVC** (data stored on **DagsHub**)
 3. **Experiment tracking & model registry** with MLflow, hosted on **Databricks (Unity Catalog)**
 4. **Web app** (Flask) with input validation, serving the registry's `@champion` model
 5. **Automated tests** (pytest)
@@ -185,15 +187,19 @@ mlproject/
 │   │   ├── data_transformation.py# ColumnTransformer (impute, scale, one-hot)
 │   │   └── model_trainer.py      # 7 models, GridSearchCV, MLflow registry
 │   ├── pipeline/
-│   │   ├── train_pipeline.py     # entry point of the training
+│   │   ├── stages.py             # DVC stages: ingest, transform, train (+ MLflow lineage)
+│   │   ├── train_pipeline.py     # the 3 stages in one process, without DVC
 │   │   └── predict_pipeline.py   # model loading (registry → .pkl fallback)
 │   ├── mlflow_config.py          # tracking / registry URIs, experiment, model name (from env)
 │   ├── utils.py                  # save / load objects, model evaluation
 │   ├── logger.py                 # timestamped log files in logs/
 │   └── exception.py              # CustomException with file + line number
 ├── templates/                    # HTML pages (Bootstrap 5)
-├── artifacts/                    # model.pkl, preprocessor.pkl, train/test CSV
-├── notebooks/                    # EDA + model training notebooks, raw data
+├── artifacts/                    # model.pkl, preprocessor.pkl (git) + intermediate data (DVC)
+├── notebooks/                    # EDA + model training notebooks, raw data (stud.csv.dvc)
+├── dvc.yaml · dvc.lock           # DVC pipeline and its locked hashes
+├── params.yaml                   # split, CV and hyperparameter grids
+├── metrics.json                  # last training metrics (dvc metrics show)
 ├── tests/                        # pytest suite
 ├── docs/architecture.drawio      # architecture diagram (open in app.diagrams.net)
 ├── .env.example                  # template for Databricks credentials (.env is git-ignored)
@@ -258,15 +264,53 @@ To use Databricks ([Free Edition](https://www.databricks.com/learn/free-edition)
 
 ---
 
+## 🗂 Data & pipeline versioning (DVC)
+
+The raw dataset and the training pipeline are versioned with [DVC](https://dvc.org). The data itself lives on **DagsHub**; git only keeps a small pointer file (`stud.csv.dvc`) with its hash.
+
+```mermaid
+flowchart LR
+    S[("stud.csv<br/>DVC · DagsHub")] --> I["ingest<br/>params: data"]
+    I --> T["transform"]
+    T --> TR["train<br/>params: train"]
+    I --> TR
+    TR --> O["model.pkl · metrics.json<br/>MLflow run + registry"]
+```
+
+| File | Role |
+|---|---|
+| `dvc.yaml` | The 3 stages, with their inputs (data, code, params) and outputs |
+| `dvc.lock` | Hashes of every input and output of the last run (commit it) |
+| `params.yaml` | Split parameters, CV folds and **all hyperparameter grids** (no longer hardcoded) |
+| `metrics.json` | Best model and its CV / test R², compared with `dvc metrics diff` |
+| `notebooks/data/stud.csv.dvc` | Pointer to the dataset version stored on DagsHub |
+
+**Lineage:** each MLflow run is tagged with the DVC hash of the dataset (`data.dvc_md5`) and the git commit, and stores `params.yaml`. Any model in the registry can be traced back to the exact data, code and parameters that produced it.
+
+`artifacts/model.pkl` and `preprocessor.pkl` stay in git (`cache: false`): the Docker image embeds them as the fallback model.
+
+**Getting the data** (after cloning):
+
+```bash
+dvc remote modify origin --local auth basic
+dvc remote modify origin --local user <dagshub-user>
+dvc remote modify origin --local password <dagshub-token>
+dvc pull
+```
+
+---
+
 ## 🛠 Usage
 
 ### Train the models
 
 ```bash
-python -m src.pipeline.train_pipeline
+dvc repro
 ```
 
-This runs the full pipeline, writes `artifacts/`, logs every model in MLflow (local or Databricks, depending on the configuration) and registers the best one.
+DVC runs only the stages whose inputs changed: editing `train.cv_folds` in `params.yaml` re-runs `train` only, and running it again with no change does nothing. The best model is logged and registered in MLflow (local or Databricks, depending on the configuration).
+
+Useful commands: `dvc dag` (pipeline graph), `dvc params diff`, `dvc metrics show`, and `python -m src.pipeline.train_pipeline` to run the 3 stages in one process without DVC.
 
 ### Explore the experiments
 
@@ -326,7 +370,7 @@ Tests always run against the **local** registry, even when a `.env` points to Da
 
 **On every push to `main`**, GitHub Actions:
 
-1. runs the tests in `python:3.8-slim`, with the exact production dependencies;
+1. pulls the dataset from DagsHub with `dvc pull`, then runs the tests in `python:3.8-slim`, with the exact production dependencies;
 2. builds the Docker image, which **fails if the model cannot be loaded**;
 3. starts the container and runs a **smoke test** (`/health` + a real prediction).
 

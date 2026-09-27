@@ -1,0 +1,5 @@
+{
+  "best_model": "Linear Regression",
+  "cv_r2": 0.8679,
+  "test_r2": 0.8775
+}

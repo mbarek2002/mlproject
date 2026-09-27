@@ -1,0 +1,32 @@
+# Pipeline parameters, tracked by DVC (dvc.yaml): changing a value re-runs only the stages that use it.
+# Compare two versions with: dvc params diff
+
+data:
+  test_size: 0.2
+  random_state: 42
+
+train:
+  cv_folds: 3
+  # training fails if no model reaches this cross-validation R²
+  min_cv_r2: 0.6
+  # GridSearchCV grid of each model (keys must match the models in src/components/model_trainer.py)
+  param_grids:
+    Random Forest:
+      n_estimators: [8, 16, 32, 64, 128, 256]
+    Decision Tree:
+      criterion: [squared_error, friedman_mse, absolute_error, poisson]
+    Gradient Boosting:
+      learning_rate: [0.1, 0.01, 0.05, 0.001]
+      subsample: [0.6, 0.7, 0.75, 0.8, 0.85, 0.9]
+      n_estimators: [8, 16, 32, 64, 128, 256]
+    Linear Regression: {}
+    XGBRegressor:
+      learning_rate: [0.1, 0.01, 0.05, 0.001]
+      n_estimators: [8, 16, 32, 64, 128, 256]
+    CatBoosting Regressor:
+      depth: [6, 8, 10]
+      learning_rate: [0.01, 0.05, 0.1]
+      iterations: [30, 50, 100]
+    AdaBoost Regressor:
+      learning_rate: [0.1, 0.01, 0.5, 0.001]
+      n_estimators: [8, 16, 32, 64, 128, 256]

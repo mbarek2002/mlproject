@@ -1,0 +1,49 @@
+# DVC pipeline: "dvc repro" re-runs only the stages whose deps / params changed.
+# Show the graph with: dvc dag
+stages:
+  ingest:
+    cmd: python -m src.pipeline.stages ingest
+    deps:
+      - notebooks/data/stud.csv
+      - src/components/data_ingection.py
+      - src/pipeline/stages.py
+    params:
+      - data
+    outs:
+      - artifacts/data.csv
+      - artifacts/train.csv
+      - artifacts/test.csv
+
+  transform:
+    cmd: python -m src.pipeline.stages transform
+    deps:
+      - artifacts/train.csv
+      - artifacts/test.csv
+      - src/components/data_transformation.py
+      - src/pipeline/stages.py
+    outs:
+      # kept in git (cache: false): the Docker image embeds it as the fallback model
+      - artifacts/preprocessor.pkl:
+          cache: false
+      - artifacts/train_arr.npy
+      - artifacts/test_arr.npy
+
+  train:
+    cmd: python -m src.pipeline.stages train
+    deps:
+      - artifacts/train_arr.npy
+      - artifacts/test_arr.npy
+      - artifacts/preprocessor.pkl
+      - artifacts/test.csv
+      - src/components/model_trainer.py
+      - src/utils.py
+      - src/mlflow_config.py
+      - src/pipeline/stages.py
+    params:
+      - train
+    outs:
+      - artifacts/model.pkl:
+          cache: false
+    metrics:
+      - metrics.json:
+          cache: false

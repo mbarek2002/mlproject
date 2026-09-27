@@ -1,0 +1,191 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python -m src.pipeline.stages ingest
+    deps:
+    - path: notebooks/data/stud.csv
+      hash: md5
+      md5: 72e8feb9e6dd40e0cc9b4563bdece775
+      size: 72036
+    - path: src/components/data_ingection.py
+      hash: md5
+      md5: 8a398eeb582f83acd04b983011c0be40
+      size: 1917
+    - path: src/pipeline/stages.py
+      hash: md5
+      md5: 0ea4ca03403785e2f264b6dedc3bed36
+      size: 4115
+    params:
+      params.yaml:
+        data:
+          test_size: 0.2
+          random_state: 42
+    outs:
+    - path: artifacts/data.csv
+      hash: md5
+      md5: ce689f302060118e9582e8b6d09b6198
+      size: 57021
+    - path: artifacts/test.csv
+      hash: md5
+      md5: 8297f961886d8c4c98cb3d8077cdf484
+      size: 11557
+    - path: artifacts/train.csv
+      hash: md5
+      md5: df5f3c37e6cbbb1e229c1e1541fe0b08
+      size: 45584
+  transform:
+    cmd: python -m src.pipeline.stages transform
+    deps:
+    - path: artifacts/test.csv
+      hash: md5
+      md5: 8297f961886d8c4c98cb3d8077cdf484
+      size: 11557
+    - path: artifacts/train.csv
+      hash: md5
+      md5: df5f3c37e6cbbb1e229c1e1541fe0b08
+      size: 45584
+    - path: src/components/data_transformation.py
+      hash: md5
+      md5: 882b3a2bb41c381a34ce4689c907b2b1
+      size: 3917
+    - path: src/pipeline/stages.py
+      hash: md5
+      md5: 0ea4ca03403785e2f264b6dedc3bed36
+      size: 4115
+    outs:
+    - path: artifacts/preprocessor.pkl
+      hash: md5
+      md5: 59456d3b7c83be1a44013653ea89c1c4
+      size: 3485
+    - path: artifacts/test_arr.npy
+      hash: md5
+      md5: 2ef88e3741867c7162c631b9bf114bbf
+      size: 32128
+    - path: artifacts/train_arr.npy
+      hash: md5
+      md5: cf71d0abf811a32e8d5cbd06aa3db6ac
+      size: 128128
+  train:
+    cmd: python -m src.pipeline.stages train
+    deps:
+    - path: artifacts/preprocessor.pkl
+      hash: md5
+      md5: 59456d3b7c83be1a44013653ea89c1c4
+      size: 3485
+    - path: artifacts/test.csv
+      hash: md5
+      md5: 8297f961886d8c4c98cb3d8077cdf484
+      size: 11557
+    - path: artifacts/test_arr.npy
+      hash: md5
+      md5: 2ef88e3741867c7162c631b9bf114bbf
+      size: 32128
+    - path: artifacts/train_arr.npy
+      hash: md5
+      md5: cf71d0abf811a32e8d5cbd06aa3db6ac
+      size: 128128
+    - path: src/components/model_trainer.py
+      hash: md5
+      md5: 64b5fbd26b353262bdf7f42794e3fc52
+      size: 6153
+    - path: src/mlflow_config.py
+      hash: md5
+      md5: 7237635d91f0229d83d6e80feecb41b4
+      size: 2312
+    - path: src/pipeline/stages.py
+      hash: md5
+      md5: 0ea4ca03403785e2f264b6dedc3bed36
+      size: 4115
+    - path: src/utils.py
+      hash: md5
+      md5: aa2ab17a8f0a61840ff3ff049138f64b
+      size: 2574
+    params:
+      params.yaml:
+        train:
+          cv_folds: 3
+          min_cv_r2: 0.6
+          param_grids:
+            Random Forest:
+              n_estimators:
+              - 8
+              - 16
+              - 32
+              - 64
+              - 128
+              - 256
+            Decision Tree:
+              criterion:
+              - squared_error
+              - friedman_mse
+              - absolute_error
+              - poisson
+            Gradient Boosting:
+              learning_rate:
+              - 0.1
+              - 0.01
+              - 0.05
+              - 0.001
+              subsample:
+              - 0.6
+              - 0.7
+              - 0.75
+              - 0.8
+              - 0.85
+              - 0.9
+              n_estimators:
+              - 8
+              - 16
+              - 32
+              - 64
+              - 128
+              - 256
+            Linear Regression: {}
+            XGBRegressor:
+              learning_rate:
+              - 0.1
+              - 0.01
+              - 0.05
+              - 0.001
+              n_estimators:
+              - 8
+              - 16
+              - 32
+              - 64
+              - 128
+              - 256
+            CatBoosting Regressor:
+              depth:
+              - 6
+              - 8
+              - 10
+              learning_rate:
+              - 0.01
+              - 0.05
+              - 0.1
+              iterations:
+              - 30
+              - 50
+              - 100
+            AdaBoost Regressor:
+              learning_rate:
+              - 0.1
+              - 0.01
+              - 0.5
+              - 0.001
+              n_estimators:
+              - 8
+              - 16
+              - 32
+              - 64
+              - 128
+              - 256
+    outs:
+    - path: artifacts/model.pkl
+      hash: md5
+      md5: ef8abbc37bcb197432e08062ea901a96
+      size: 707
+    - path: metrics.json
+      hash: md5
+      md5: 0a7af54291c14620dd0fa9d55e262fdd
+      size: 83

@@ -21,16 +21,32 @@ jobs:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PIP_ROOT_USER_ACTION: ignore
     steps:
+      # DVC needs a real git clone (actions/checkout only clones when git is installed)
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git
+
       - uses: actions/checkout@v4
 
       - name: Cache pip downloads
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: pip-${{ hashFiles('requirements-prod.txt') }}
+          key: pip-${{ hashFiles('requirements-prod.txt') }}-dvc-3.42.0
 
       - name: Install dependencies
-        run: pip install -r requirements-prod.txt pytest==8.3.5
+        run: pip install -r requirements-prod.txt pytest==8.3.5 dvc==3.42.0
+
+      # the raw dataset is versioned with DVC and stored on DagsHub, not in git
+      - name: Pull data (DVC, DagsHub)
+        env:
+          DAGSHUB_USER: ${{ secrets.DAGSHUB_USER }}
+          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          dvc remote modify origin --local auth basic
+          dvc remote modify origin --local user "$DAGSHUB_USER"
+          dvc remote modify origin --local password "$DAGSHUB_TOKEN"
+          dvc pull notebooks/data/stud.csv
 
       - name: Run tests
         run: python -m pytest -v
