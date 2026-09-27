@@ -1,3 +1,6 @@
+import hmac
+import os
+
 from flask import Flask,request,render_template
 
 from src.pipeline.predict_pipeline import CustomData,PredictPipeline
@@ -16,7 +19,23 @@ def index():
 
 @app.route('/health')
 def health():
-    return {"status":"ok"}
+    # model is None until the first prediction (the model is loaded lazily)
+    return {"status":"ok","model":PredictPipeline.model_info()}
+
+## Reload the champion model without restarting the app (after a new promotion in the registry)
+
+@app.route('/admin/reload-model',methods=['POST'])
+def reload_model():
+    expected_token=os.getenv("RELOAD_TOKEN")
+    if not expected_token:
+        # disabled unless a token is configured on the server
+        return {"error":"not found"},404
+
+    auth=request.headers.get("Authorization","")
+    if not hmac.compare_digest(auth,f"Bearer {expected_token}"):
+        return {"error":"unauthorized"},401
+
+    return {"status":"reloaded","model":PredictPipeline.reload_model()}
 
 REQUIRED_FIELDS=['gender','ethnicity','parental_level_of_education','lunch','test_preparation_course',
                  'reading_score','writing_score']

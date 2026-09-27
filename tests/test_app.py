@@ -26,7 +26,42 @@ def test_health(client):
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.get_json() == {"status": "ok"}
+    assert response.get_json()["status"] == "ok"
+
+
+def test_health_shows_served_model(client, valid_form):
+    client.post("/predictdata", data=valid_form)
+
+    # the registry is disabled in tests (see conftest), so the pickles are served
+    assert client.get("/health").get_json()["model"] == {"source": "pickle-fallback"}
+
+
+def test_reload_is_disabled_without_token(client, monkeypatch):
+    monkeypatch.delenv("RELOAD_TOKEN", raising=False)
+
+    assert client.post("/admin/reload-model").status_code == 404
+
+
+@pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer wrong"}, {"Authorization": "secret-token"}])
+def test_reload_rejects_bad_token(client, monkeypatch, headers):
+    monkeypatch.setenv("RELOAD_TOKEN", "secret-token")
+
+    assert client.post("/admin/reload-model", headers=headers).status_code == 401
+
+
+def test_reload_with_token_loads_a_new_model(client, monkeypatch):
+    monkeypatch.setenv("RELOAD_TOKEN", "secret-token")
+    old_model = PredictPipeline.load_model()
+
+    response = client.post("/admin/reload-model", headers={"Authorization": "Bearer secret-token"})
+
+    assert response.status_code == 200
+    assert response.get_json() == {"status": "reloaded", "model": {"source": "pickle-fallback"}}
+    assert PredictPipeline._model is not old_model
+
+
+def test_reload_route_only_accepts_post(client):
+    assert client.get("/admin/reload-model").status_code == 405
 
 
 def test_form_page(client):

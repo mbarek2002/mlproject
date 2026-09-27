@@ -1,10 +1,20 @@
 import os
 
+# tests always use the local registry, even when a .env points to Databricks
+# (load_dotenv never overrides variables that already exist)
+os.environ["MLFLOW_TRACKING_URI"] = "sqlite:///mlflow.db"
+os.environ["MLFLOW_REGISTRY_URI"] = ""
+os.environ["MLFLOW_EXPERIMENT_NAME"] = "student-performance"
+os.environ["MLFLOW_REGISTERED_MODEL_NAME"] = "student-math-model"
+
 import mlflow.sklearn
 import pandas as pd
 import pytest
 
 from src.pipeline.predict_pipeline import PredictPipeline
+
+
+
 
 DATA_PATH = os.path.join("notebooks", "data", "stud.csv")
 TARGET_COLUMN = "math_score"
@@ -26,6 +36,7 @@ def model_source(request, monkeypatch):
     The model cache is reset around every test.
     '''
     PredictPipeline._model = None
+    PredictPipeline._model_info = {"source": None}
 
     if "registry" not in request.keywords:
         def registry_disabled(*args, **kwargs):
@@ -35,6 +46,7 @@ def model_source(request, monkeypatch):
 
     yield
     PredictPipeline._model = None
+    PredictPipeline._model_info = {"source": None}
 
 
 @pytest.fixture

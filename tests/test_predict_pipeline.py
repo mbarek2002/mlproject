@@ -1,3 +1,4 @@
+import importlib
 import os
 
 import mlflow
@@ -67,3 +68,15 @@ def test_registry_champion_is_used(make_student):
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     champion = mlflow.sklearn.load_model(f"models:/{REGISTERED_MODEL_NAME}@{CHAMPION_ALIAS}")
     assert prediction == pytest.approx(float(champion.predict(student)[0]))
+    assert PredictPipeline.model_info()["source"] == "mlflow-registry"
+
+
+def test_tracking_uri_comes_from_environment(monkeypatch):
+    import src.mlflow_config as config
+
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", "https://example.com/user/repo.mlflow")
+    try:
+        assert importlib.reload(config).MLFLOW_TRACKING_URI == "https://example.com/user/repo.mlflow"
+    finally:
+        monkeypatch.undo()
+        importlib.reload(config)

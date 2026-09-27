@@ -15,6 +15,10 @@ catboost_info/
 tests/
 *.egg-info/
 
+# secrets: injected as environment variables by the platform, never baked into the image
+.env
+.env.*
+
 # local MLflow registry: stores absolute Windows paths, unusable inside the container
 mlflow.db
 mlruns/

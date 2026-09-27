@@ -1,0 +1,267 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="architecture" name="Architecture">
+    <mxGraphModel dx="1440" dy="760" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1460" pageHeight="780" background="#FFFFFF" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===================== REGIONS (blue = training, green = deployment, grey = planned) ===================== -->
+        <mxCell id="region-monitoring" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;dashed=1;dashPattern=6 4;fillColor=#FAFAFA;strokeColor=#C9C9C9;" vertex="1" parent="1">
+          <mxGeometry x="330" y="60" width="470" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="title-monitoring" value="Monitoring &lt;span style=&quot;font-weight:normal;font-size:14px&quot;&gt;(planned)&lt;/span&gt;" style="text;html=1;fontSize=20;fontStyle=1;fontColor=#9E9E9E;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="330" y="20" width="470" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="region-training" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;dashed=1;dashPattern=6 4;fillColor=#F3F7FF;strokeColor=#6B8FD6;" vertex="1" parent="1">
+          <mxGeometry x="20" y="250" width="830" height="420" as="geometry" />
+        </mxCell>
+        <mxCell id="title-training" value="Training" style="text;html=1;fontSize=20;fontStyle=1;fontColor=#2F5DB3;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="20" y="680" width="830" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="region-deployment" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;dashed=1;dashPattern=6 4;fillColor=#F1FBF5;strokeColor=#4CAF7A;" vertex="1" parent="1">
+          <mxGeometry x="870" y="60" width="550" height="610" as="geometry" />
+        </mxCell>
+        <mxCell id="title-deployment" value="Deployment" style="text;html=1;fontSize=20;fontStyle=1;fontColor=#1E8A4C;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="870" y="20" width="550" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== MONITORING (planned) ===================== -->
+        <mxCell id="prod-data" value="Production inputs&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;logged predictions&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#BDBDBD;dashed=1;fontSize=13;fontColor=#9E9E9E;" vertex="1" parent="1">
+          <mxGeometry x="360" y="110" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="drift" value="Drift report&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;Evidently, weekly&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#BDBDBD;dashed=1;fontSize=13;fontColor=#9E9E9E;" vertex="1" parent="1">
+          <mxGeometry x="610" y="110" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== TRAINING ===================== -->
+        <!-- data steps: blue -->
+        <mxCell id="source" value="&lt;b&gt;Data source&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;stud.csv · 1,000 students&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#E3EEFF;strokeColor=#2F6FDB;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="55" y="300" width="160" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="ingestion" value="&lt;b&gt;Data ingestion&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;80 / 20 train-test split&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#E3EEFF;strokeColor=#2F6FDB;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="55" y="460" width="160" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="transformation" value="&lt;b&gt;Data transformation&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;impute · scale · one-hot&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#E3EEFF;strokeColor=#2F6FDB;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="300" y="460" width="170" height="64" as="geometry" />
+        </mxCell>
+        <!-- training: orange -->
+        <mxCell id="trainer" value="&lt;b&gt;Model trainer&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;7 models × GridSearchCV&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFF1DD;strokeColor=#F08C00;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="300" y="300" width="170" height="64" as="geometry" />
+        </mxCell>
+        <!-- MLflow: MLflow blue -->
+        <mxCell id="tracking" value="&lt;b&gt;Experiment tracking&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;params · CV R² · test R²&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#E0F4FD;strokeColor=#0194E2;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="560" y="300" width="180" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="registry" value="&lt;b&gt;Model registry&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;@champion / @challenger&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#E0F4FD;strokeColor=#0194E2;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="560" y="460" width="180" height="64" as="geometry" />
+        </mxCell>
+        <!-- artifacts: purple -->
+        <mxCell id="artifacts" value="&lt;b&gt;artifacts/&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;model.pkl · preprocessor.pkl&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#F2E8FA;strokeColor=#8E44AD;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="300" y="575" width="170" height="64" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== MODEL HUB ===================== -->
+        <mxCell id="model" value="Model&lt;br&gt;&lt;span style=&quot;font-size:10px;font-weight:normal&quot;&gt;Linear Reg.&lt;br&gt;R² = 0.878&lt;/span&gt;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#1F2937;gradientColor=#4B5563;gradientDirection=north;strokeColor=#F7931E;strokeWidth=4;fontColor=#FFFFFF;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="870" y="440" width="96" height="96" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== DEPLOYMENT ===================== -->
+        <mxCell id="docker-box" value="&lt;b&gt;Docker image&lt;/b&gt; · 490 MB" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;dashed=1;dashPattern=4 3;fillColor=#E6F4FE;strokeColor=#2496ED;strokeWidth=1.5;verticalAlign=bottom;spacingBottom=8;fontSize=12;fontColor=#1D63A8;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="420" width="180" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="flask-app" value="&lt;b&gt;Flask app + waitress&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;/predictdata · /health&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#333333;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="450" width="160" height="64" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ci" value="&lt;b&gt;GitHub Actions&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;pytest · build ·&lt;br&gt;smoke test&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#EAF3FF;strokeColor=#2088FF;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="1265" y="450" width="140" height="64" as="geometry" />
+        </mxCell>
+
+        <mxCell id="render-box" value="&lt;b&gt;Render&lt;/b&gt; · free plan" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;dashed=1;dashPattern=4 3;fillColor=#E6FBF5;strokeColor=#2DBF95;strokeWidth=1.5;verticalAlign=bottom;spacingBottom=8;fontSize=12;fontColor=#15795C;" vertex="1" parent="1">
+          <mxGeometry x="1215" y="190" width="190" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="web-service" value="&lt;b&gt;Web service&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;Docker · Frankfurt&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=14;fillColor=#FFFFFF;strokeColor=#2DBF95;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="220" width="160" height="64" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user" value="&lt;b&gt;User&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;web browser&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#FFF6D6;strokeColor=#E0A800;strokeWidth=1.5;fontSize=13;fontColor=#1A1A1A;" vertex="1" parent="1">
+          <mxGeometry x="960" y="220" width="150" height="64" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== ICONS (Simple Icons, loaded from the CDN) ===================== -->
+        <mxCell id="icon-kaggle" value="" style="shape=image;html=1;aspect=fixed;image=https://cdn.simpleicons.org/kaggle;imageAspect=1;" vertex="1" parent="1">
+          <mxGeometry x="165" y="280" width="56" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-pandas" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/pandas;" vertex="1" parent="1">
+          <mxGeometry x="197" y="445" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-numpy" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/numpy;" vertex="1" parent="1">
+          <mxGeometry x="418" y="445" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-sklearn" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/scikitlearn;" vertex="1" parent="1">
+          <mxGeometry x="452" y="445" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-python" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/python;" vertex="1" parent="1">
+          <mxGeometry x="452" y="285" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-mlflow-1" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/mlflow;" vertex="1" parent="1">
+          <mxGeometry x="722" y="285" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-mlflow-2" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/mlflow;" vertex="1" parent="1">
+          <mxGeometry x="722" y="445" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-sqlite" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/sqlite;" vertex="1" parent="1">
+          <mxGeometry x="688" y="445" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-git" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/git;" vertex="1" parent="1">
+          <mxGeometry x="452" y="560" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-sklearn-model" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/scikitlearn;" vertex="1" parent="1">
+          <mxGeometry x="944" y="430" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-docker" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/docker;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="400" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-flask" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/flask;" vertex="1" parent="1">
+          <mxGeometry x="1036" y="435" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-jinja" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/jinja;" vertex="1" parent="1">
+          <mxGeometry x="1068" y="437" width="26" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-bootstrap" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/bootstrap;" vertex="1" parent="1">
+          <mxGeometry x="1096" y="437" width="26" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-gha" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/githubactions;" vertex="1" parent="1">
+          <mxGeometry x="1388" y="435" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-pytest" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/pytest;" vertex="1" parent="1">
+          <mxGeometry x="1354" y="435" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-github" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/github;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="435" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-render" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/render;" vertex="1" parent="1">
+          <mxGeometry x="1390" y="176" width="28" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-chrome" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;image=https://cdn.simpleicons.org/googlechrome;" vertex="1" parent="1">
+          <mxGeometry x="1092" y="205" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="icon-postgres" value="" style="shape=image;html=1;imageAspect=0;aspect=fixed;opacity=40;image=https://cdn.simpleicons.org/postgresql;" vertex="1" parent="1">
+          <mxGeometry x="492" y="95" width="30" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== EDGES: training (blue) ===================== -->
+        <mxCell id="e-source-ingestion" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#2F5DB3;strokeWidth=1.5;" edge="1" parent="1" source="source" target="ingestion">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ingestion-transformation" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#2F5DB3;strokeWidth=1.5;" edge="1" parent="1" source="ingestion" target="transformation">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-transformation-trainer" value="features" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#2F5DB3;strokeWidth=1.5;fontSize=11;fontColor=#2F5DB3;labelBackgroundColor=#F3F7FF;" edge="1" parent="1" source="transformation" target="trainer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-trainer-tracking" value="runs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#2F5DB3;strokeWidth=1.5;fontSize=11;fontColor=#2F5DB3;labelBackgroundColor=#F3F7FF;" edge="1" parent="1" source="trainer" target="tracking">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-tracking-registry" value="best CV R²" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#2F5DB3;strokeWidth=1.5;fontSize=11;fontColor=#2F5DB3;labelBackgroundColor=#F3F7FF;" edge="1" parent="1" source="tracking" target="registry">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-transformation-artifacts" value="preprocessor" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#2F5DB3;strokeWidth=1.5;fontSize=11;fontColor=#2F5DB3;labelBackgroundColor=#F3F7FF;exitX=0.3;exitY=1;entryX=0.3;entryY=0;" edge="1" parent="1" source="transformation" target="artifacts">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-trainer-artifacts" value="model" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#2F5DB3;strokeWidth=1.5;fontSize=11;fontColor=#2F5DB3;labelBackgroundColor=#F3F7FF;exitX=1;exitY=0.8;entryX=0.8;entryY=0;" edge="1" parent="1" source="trainer" target="artifacts">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="515" y="351" />
+              <mxPoint x="515" y="550" />
+              <mxPoint x="436" y="550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ===================== EDGES: model hub (orange) ===================== -->
+        <mxCell id="e-registry-model" value="@champion" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#E07B00;strokeWidth=2;fontSize=11;fontStyle=1;fontColor=#E07B00;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="registry" target="model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-artifacts-model" value="fallback .pkl" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#E07B00;strokeWidth=2;fontSize=11;fontColor=#E07B00;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0.5;entryY=1;" edge="1" parent="1" source="artifacts" target="model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-model-docker" value="load" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#E07B00;strokeWidth=2;fontSize=11;fontColor=#E07B00;labelBackgroundColor=#F1FBF5;exitX=1;exitY=0.5;entryX=0;entryY=0.44;" edge="1" parent="1" source="model" target="docker-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== EDGES: deployment (green) ===================== -->
+        <mxCell id="e-docker-ci" value="git push" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#1E8A4C;strokeWidth=1.5;fontSize=11;fontColor=#1E8A4C;labelBackgroundColor=#F1FBF5;exitX=1;exitY=0.44;entryX=0;entryY=0.5;" edge="1" parent="1" source="docker-box" target="ci">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-ci-render" value="checks pass&lt;br&gt;→ auto-deploy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;endSize=6;strokeColor=#1E8A4C;strokeWidth=1.5;fontSize=11;fontColor=#1E8A4C;labelBackgroundColor=#F1FBF5;exitX=0.5;exitY=0;entryX=0.55;entryY=1;" edge="1" parent="1" source="ci" target="render-box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-user-service" value="profile → predicted&lt;br&gt;math score" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=block;startFill=1;startSize=6;endArrow=block;endFill=1;endSize=6;strokeColor=#1E8A4C;strokeWidth=1.5;fontSize=11;fontColor=#1E8A4C;labelBackgroundColor=#F1FBF5;" edge="1" parent="1" source="user" target="web-service">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ===================== EDGES: monitoring (planned, grey dashed) ===================== -->
+        <mxCell id="e-service-prod" value="log predictions" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=1;endSize=6;strokeColor=#BDBDBD;fontSize=11;fontColor=#9E9E9E;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=0;entryX=0.5;entryY=0;" edge="1" parent="1" source="render-box" target="prod-data">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1310" y="85" />
+              <mxPoint x="435" y="85" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-prod-drift" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=1;endSize=6;strokeColor=#BDBDBD;" edge="1" parent="1" source="prod-data" target="drift">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-drift-trainer" value="retrain if drift" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=1;endSize=6;strokeColor=#BDBDBD;fontSize=11;fontColor=#9E9E9E;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="drift" target="trainer">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="230" />
+              <mxPoint x="385" y="230" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ===================== LEGEND + CREDIT ===================== -->
+        <mxCell id="legend-data" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#E3EEFF;strokeColor=#2F6FDB;" vertex="1" parent="1">
+          <mxGeometry x="30" y="727" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-data-text" value="data" style="text;html=1;fontSize=12;fontColor=#333333;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="52" y="722" width="50" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-train" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#FFF1DD;strokeColor=#F08C00;" vertex="1" parent="1">
+          <mxGeometry x="100" y="727" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-train-text" value="training" style="text;html=1;fontSize=12;fontColor=#333333;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="122" y="722" width="60" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-mlflow" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#E0F4FD;strokeColor=#0194E2;" vertex="1" parent="1">
+          <mxGeometry x="186" y="727" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-mlflow-text" value="MLflow" style="text;html=1;fontSize=12;fontColor=#333333;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="208" y="722" width="60" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-artifacts" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=20;fillColor=#F2E8FA;strokeColor=#8E44AD;" vertex="1" parent="1">
+          <mxGeometry x="264" y="727" width="16" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-artifacts-text" value="artifacts" style="text;html=1;fontSize=12;fontColor=#333333;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="286" y="722" width="60" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-planned" value="" style="endArrow=block;endFill=1;endSize=6;html=1;dashed=1;strokeColor=#BDBDBD;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="360" y="735" as="sourcePoint" />
+            <mxPoint x="405" y="735" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend-planned-text" value="planned" style="text;html=1;fontSize=12;fontColor=#9E9E9E;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="412" y="722" width="60" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="credit" value="Student Performance Predictor&lt;br&gt;&lt;span style=&quot;font-size:11px&quot;&gt;by Iheb Mbarek&lt;/span&gt;" style="text;html=1;fontSize=13;fontColor=#555555;align=right;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="712" width="260" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

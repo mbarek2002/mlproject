@@ -3,15 +3,18 @@ import pandas as pd
 from src.exception import CustomException
 from src.logger import logging
 from src.utils import load_object
-from src.mlflow_config import MLFLOW_TRACKING_URI, REGISTERED_MODEL_NAME, CHAMPION_ALIAS
+from src.mlflow_config import configure_mlflow_uris, REGISTERED_MODEL_NAME, CHAMPION_ALIAS
 import os
 import mlflow
 import mlflow.sklearn
+from mlflow import MlflowClient
 from sklearn.pipeline import Pipeline
 
 class PredictPipeline:
     # shared by all instances: the model is loaded once per process, not on every request
     _model=None
+    # where the served model comes from, shown by /health
+    _model_info={"source":None}
 
     def __init__(self):
         pass
@@ -26,17 +29,36 @@ class PredictPipeline:
             return cls._model
 
         try:
-            mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-            model_uri=f"models:/{REGISTERED_MODEL_NAME}@{CHAMPION_ALIAS}"
+            configure_mlflow_uris()
+            # resolve the alias first, so the exact version served is known
+            version=MlflowClient().get_model_version_by_alias(REGISTERED_MODEL_NAME,CHAMPION_ALIAS).version
+            model_uri=f"models:/{REGISTERED_MODEL_NAME}/{version}"
             cls._model=mlflow.sklearn.load_model(model_uri)
-            logging.info(f"Loaded model from {model_uri}")
+            cls._model_info={"source":"mlflow-registry","model":REGISTERED_MODEL_NAME,
+                             "alias":CHAMPION_ALIAS,"version":str(version)}
+            logging.info(f"Loaded model from {model_uri} (@{CHAMPION_ALIAS})")
         except Exception as e:
             logging.info(f"Could not load model from MLflow registry ({e}), falling back to artifacts/*.pkl")
             model=load_object(file_path=os.path.join("artifacts","model.pkl"))
             preprocessor=load_object(file_path=os.path.join("artifacts","preprocessor.pkl"))
             cls._model=Pipeline(steps=[("preprocessor",preprocessor),("model",model)])
+            cls._model_info={"source":"pickle-fallback"}
 
         return cls._model
+
+    @classmethod
+    def reload_model(cls):
+        '''
+        Drops the cached model and loads the current champion again (e.g. after a new promotion).
+        The old model keeps serving requests until the new one is loaded.
+        '''
+        cls._model=None
+        cls.load_model()
+        return cls._model_info
+
+    @classmethod
+    def model_info(cls):
+        return dict(cls._model_info)
 
     def predict(self,features):
         try:
