@@ -1,5 +1,7 @@
 import sys
+import time
 import pandas as pd
+from src import monitoring
 from src.exception import CustomException
 from src.logger import logging
 from src.utils import load_object
@@ -28,6 +30,7 @@ class PredictPipeline:
         if cls._model is not None:
             return cls._model
 
+        start=time.perf_counter()
         try:
             configure_mlflow_uris()
             # resolve the alias first, so the exact version served is known
@@ -44,6 +47,7 @@ class PredictPipeline:
             cls._model=Pipeline(steps=[("preprocessor",preprocessor),("model",model)])
             cls._model_info={"source":"pickle-fallback"}
 
+        monitoring.set_model_info(cls._model_info,load_seconds=time.perf_counter()-start)
         return cls._model
 
     @classmethod

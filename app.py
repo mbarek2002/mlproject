@@ -1,13 +1,18 @@
 import hmac
 import os
+import time
 
 from flask import Flask,request,render_template
 
+from src import monitoring
 from src.pipeline.predict_pipeline import CustomData,PredictPipeline
 
 application=Flask(__name__)
 
 app=application
+
+## Prometheus: request metrics + GET /metrics
+monitoring.init_app(app)
 
 ## Route for a home page
 
@@ -65,6 +70,7 @@ def predict_datapoint():
     else:
         error=validate_form(request.form)
         if error:
+            monitoring.observe_invalid(error)
             return render_template('home.html',error=error),400
 
         data=CustomData(
@@ -80,7 +86,9 @@ def predict_datapoint():
         pred_df=data.get_data_as_data_frame()
 
         predict_pipeline=PredictPipeline()
+        start=time.perf_counter()
         results=predict_pipeline.predict(pred_df)
+        monitoring.observe_prediction(pred_df,float(results[0]),time.perf_counter()-start)
         return render_template('home.html',results=round(float(results[0]),2))
 
 

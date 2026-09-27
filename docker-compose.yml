@@ -1,0 +1,48 @@
+# Local monitoring stack: the app + Prometheus (scrapes /metrics) + Grafana (dashboard)
+#   docker compose up -d --build
+#   app: http://127.0.0.1:8501   Prometheus: http://127.0.0.1:9090   Grafana: http://127.0.0.1:3001
+services:
+  app:
+    build: .
+    image: student-performance:latest
+    container_name: sp-app
+    # optional: Databricks credentials (without it, the .pkl fallback model is served)
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "8501:5000"
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: sp-prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - app
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: sp-grafana
+    environment:
+      # read-only access without login; log in as admin to edit
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/student-performance.json
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus-data:
+  grafana-data:

@@ -14,6 +14,7 @@ Predicts a student's **math score** from their profile and their reading & writi
 ![DVC](https://img.shields.io/badge/Data%20%26%20pipeline-DVC%20%2B%20DagsHub-945DD6?logo=dvc&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.0-000000?logo=flask&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+![Monitoring](https://img.shields.io/badge/Monitoring-Prometheus%20%2B%20Grafana-E6522C?logo=prometheus&logoColor=white)
 ![Render](https://img.shields.io/badge/Deployed%20on-Render-46E3B7?logo=render&logoColor=white)
 
 🌐 **Live demo:** https://student-performance-cgcd.onrender.com/predictdata
@@ -36,6 +37,7 @@ Predicts a student's **math score** from their profile and their reading & writi
 - [Configuration: local or Databricks registry](#-configuration-local-or-databricks-registry)
 - [Data & pipeline versioning (DVC)](#-data--pipeline-versioning-dvc)
 - [Usage](#-usage)
+- [Monitoring (Prometheus + Grafana)](#-monitoring-prometheus--grafana)
 - [Tests & CI/CD](#-tests--cicd)
 - [Technical choices](#-technical-choices)
 
@@ -60,6 +62,7 @@ The project covers the full ML lifecycle:
 5. **Automated tests** (pytest)
 6. **Docker image** (490 MB, non-root, health check)
 7. **CI/CD**: GitHub Actions → Render
+8. **Monitoring**: Prometheus metrics + Grafana dashboard (service health, served model, **data drift signals**)
 
 A new model goes live **without redeploying**: training promotes it to `@champion` in Databricks, then the app reloads it.
 
@@ -180,7 +183,7 @@ flowchart TD
 
 ```
 mlproject/
-├── app.py                        # Flask app: /, /predictdata, /health, /admin/reload-model
+├── app.py                        # Flask app: /, /predictdata, /health, /metrics, /admin/reload-model
 ├── src/
 │   ├── components/
 │   │   ├── data_ingection.py     # read + train/test split
@@ -191,6 +194,7 @@ mlproject/
 │   │   ├── train_pipeline.py     # the 3 stages in one process, without DVC
 │   │   └── predict_pipeline.py   # model loading (registry → .pkl fallback)
 │   ├── mlflow_config.py          # tracking / registry URIs, experiment, model name (from env)
+│   ├── monitoring.py             # Prometheus metrics (service, model, data drift)
 │   ├── utils.py                  # save / load objects, model evaluation
 │   ├── logger.py                 # timestamped log files in logs/
 │   └── exception.py              # CustomException with file + line number
@@ -201,7 +205,10 @@ mlproject/
 ├── params.yaml                   # split, CV and hyperparameter grids
 ├── metrics.json                  # last training metrics (dvc metrics show)
 ├── tests/                        # pytest suite
-├── docs/architecture.drawio      # architecture diagram (open in app.diagrams.net)
+├── monitoring/                   # Prometheus config, Grafana datasource + dashboard (as code)
+├── scripts/generate_traffic.py   # traffic simulator (with optional data drift)
+├── docker-compose.yml            # local stack: app + Prometheus + Grafana
+├── docs/                         # architecture diagram (draw.io), dashboard screenshot
 ├── .env.example                  # template for Databricks credentials (.env is git-ignored)
 ├── Dockerfile                    # production image
 ├── render.yaml                   # Render deployment blueprint
@@ -353,18 +360,52 @@ Then open http://127.0.0.1:8501/predictdata. Without `--env-file .env`, the cont
 
 ---
 
+## 📈 Monitoring (Prometheus + Grafana)
+
+The app exposes Prometheus metrics on `GET /metrics`; a local stack scrapes them every 15 s and shows them in a provisioned Grafana dashboard.
+
+![Grafana dashboard](docs/grafana-dashboard.png)
+
+*Simulated traffic: normal inputs first (production means overlap the dashed training means), then inputs 25 points lower. The drift is immediately visible.*
+
+| Group | Metrics | Question answered |
+|---|---|---|
+| **Service** | `http_requests_total{endpoint,status}`, `http_request_duration_seconds` | Is the API up, fast and error-free? |
+| **Model** | `model_info{source,version}`, `model_load_seconds`, `predictions_total`, `prediction_duration_seconds`, `invalid_requests_total{reason}` | Which model is served (registry or fallback)? How fast is inference? |
+| **ML: drift signals** | `predicted_math_score`, `input_score{feature}` (histograms), `input_category_total{feature,value}` | Do production inputs and predictions still look like the training data? |
+
+**Run it locally:**
+
+```bash
+docker compose up -d --build          # app + Prometheus + Grafana
+python scripts/generate_traffic.py    # realistic traffic (add --drift 25 to simulate drift)
+```
+
+| Service | URL |
+|---|---|
+| App | http://127.0.0.1:8501 |
+| Prometheus | http://127.0.0.1:9090 |
+| Grafana | http://127.0.0.1:3001 (dashboard *MLOps → Student Performance*, read-only; `admin` / `admin` to edit) |
+
+Everything is **configuration as code**: `monitoring/prometheus/prometheus.yml`, the Grafana datasource and the dashboard (`monitoring/grafana/`) are versioned and provisioned at startup. Stop the stack with `docker compose down`.
+
+`/metrics` is public by default. Set `METRICS_TOKEN` (e.g. on Render) to require `Authorization: Bearer <token>`.
+
+---
+
 ## ✅ Tests & CI/CD
 
 ```bash
 pytest -v
 ```
 
-**28 tests** cover the preprocessing, the prediction pipeline and the web app. Among them:
+**35 tests** cover the preprocessing, the prediction pipeline, the web app and the metrics. Among them:
 
 - invalid forms return a **400** with a clear message (never a 500);
 - reading and writing scores are **not swapped** between the form and the model;
 - the `.pkl` fallback works when the MLflow registry is unavailable;
-- `/admin/reload-model` rejects missing or wrong tokens.
+- `/admin/reload-model` rejects missing or wrong tokens;
+- every prediction updates the model and data-drift metrics, and unknown URLs never create new metric series.
 
 Tests always run against the **local** registry, even when a `.env` points to Databricks: they are fast, offline and give the same result on every machine.
 
@@ -389,6 +430,8 @@ Tests always run against the **local** registry, even when a `.env` points to Da
 | **Training locally, registry remotely** | No Databricks compute used; the training code is unchanged |
 | **Hot reload** behind a token | New models go live in seconds, without a commit or an image rebuild |
 | **`.pkl` fallback** + short MLflow timeouts | The app keeps working (and never hangs) if Databricks is unreachable |
+| **Drift signals as Prometheus histograms** | Input and prediction distributions compared live with the training means, without storing raw requests |
+| Metric labels from **route patterns only** | Bounded number of series: random URLs can't blow up Prometheus |
 | Configuration through **environment variables** | Same code and image everywhere; secrets never in git nor in the image |
 | **Pinned versions** | A pickled model must be loaded with the scikit-learn version that created it |
 | **Separate `requirements-prod.txt`** | No XGBoost / CatBoost in the image: **2 GB → 490 MB** |

@@ -34,3 +34,9 @@ mlartifacts/
 
 Dockerfile
 .dockerignore
+
+# local monitoring stack and docs: not needed in the image
+monitoring/
+scripts/
+docs/
+docker-compose.yml
